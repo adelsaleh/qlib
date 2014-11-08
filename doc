@@ -9,4 +9,6 @@ module instruction:
     functions to deal with validating instructions and manipulating
     instructions, converting instructions etc.
 
-
+module parser:
+    contains the parsing logic for bytecode into the respective data
+    structures and logic for parsing assembly as well.
