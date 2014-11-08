@@ -1,0 +1,9 @@
+{
+	"name": "qasm",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2014, bayan",
+	"authors": ["George Zakhour", "Bayan Rafeh", "Adel Saleh"],
+	"dependencies": {
+	},
+    "targetType": "library"
+}

@@ -1,0 +1,12 @@
+module collections:
+    data structures: cabinet, dictionary, any data structures we need
+
+module tokens.asm:
+    enum of instructions, 2 functions that convert string to enum value
+    and back.
+
+module instruction:
+    functions to deal with validating instructions and manipulating
+    instructions, converting instructions etc.
+
+
