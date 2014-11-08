@@ -1,13 +1,41 @@
 module collections:
     data structures: cabinet, dictionary, any data structures we need
+    cabinet:
+        A queue with a size s which ignores any extra elements added to it
+
+    Program contains:
+        Environment: defined below
+        
+        FunctionList:
+            List of functions contained in the program
+
+    Environment containing:
+        IdList:
+            A list containing the identifiers used by the program.
+
+        IdMap:
+            A Map with the key being the identifier string and the value being
+            it's index
+    
+    Converter which converts any of the collections to bytecode.
 
 module tokens.asm:
     enum of instructions, 2 functions that convert string to enum value
     and back.
 
+    Opcode:
+        enum of all possible opcodes
+
+    to_opcode(string op): converts string to opcode enum
+    to_instruction(Opcode opcode): converts opcode enum to instruction string
+
 module instruction:
     functions to deal with validating instructions and manipulating
     instructions, converting instructions etc.
+
+    validate_instruction(ubyte* byte_sequence) Validates the arguments of the instruction according to the opcode
+    string_to_instruction(string instruction) Generates the bytecode instruction from the string.
+    instruction_to_string(ubyte* byte_sequence, Environment env)  Generates the string representation of the instruction using env.
 
 module parser:
     contains the parsing logic for bytecode into the respective data
