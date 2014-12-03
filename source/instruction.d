@@ -129,3 +129,28 @@ Instruction to_instruction(ubyte* byte_sequence) {
      return Instruction(cast(Opcode)opcode, qubit, op1, op2, number);
 }
 
+
+ubyte* instruction_to_byte_sequence(Instruction ins, ubyte* seq) {
+    ubyte opcode = cast(ubyte)ins.opcode;
+    seq[0] |= opcode << 4;
+
+    int qubit = ins.qubit;
+    seq[0] |= qubit & 0x78 >> 3;
+    seq[1] |= (qubit & 0x07) << 5;
+
+    int op1 = ins.op1;
+    seq[1] |= (op1 & 0x7c) >> 2;
+    seq[2] |= (op1 & 0x03) << 6;
+
+    int op2 = ins.op2;
+    seq[2] |= (op2 & 0x7e) >> 1;
+    seq[3] |= (op2 & 0x01) << 7;
+
+    int number = ins.number;
+    seq[3] |= 0x7f & number;
+
+    int lineNum = ins.lineNumber;
+    seq[4] = (lineNum & 0xff00) >> 8;
+    seq[5] = (lineNum & 0x00ff);
+    return seq;
+}
