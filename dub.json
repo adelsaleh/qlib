@@ -1,7 +1,7 @@
 {
-	"name": "qasm",
-	"description": "A minimal D application.",
-	"copyright": "Copyright © 2014, bayan",
+	"name": "qlib",
+	"description": "Library to perform quantum computations.",
+	"copyright": "Copyright © 2014, BAG Group",
 	"authors": ["George Zakhour", "Bayan Rafeh", "Adel Saleh"],
 	"dependencies": {
 	},
