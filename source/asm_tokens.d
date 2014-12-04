@@ -3,7 +3,7 @@ module asm_tokens;
 import std.string;
 
 enum Opcode {
-    NULL,
+    NULL = cast(ubyte)0,
     QUBIT,
     IF,
     IFELSE,
