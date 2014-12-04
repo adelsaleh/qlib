@@ -24,22 +24,22 @@ enum InstructionArgType {
 alias IAT = InstructionArgType;
 
 InstructionArgType[][] argLocations = [
-    /*NULL*/   [IAT.NONE, IAT.NONE, IAT.NONE],
-    /*QUBIT*/  [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*IF*/     [IAT.QUBIT, IAT.OP1, IAT.NONE],
-    /*IFELSE*/ [IAT.QUBIT, IAT.OP1, IAT.OP2],
-    /*MEASURE*/[IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*LOOP*/   [IAT.OP1, IAT.NUMBER, IAT.NONE],
-    /*ON*/     [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*APPLY*/  [IAT.OP1, IAT.NONE, IAT.NONE],
-    /*LOAD*/   [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*DUMP*/   [IAT.NONE, IAT.NONE, IAT.NONE],
-    /*SREC*/   [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*EREC*/   [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*QSREC*/  [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*QEREC*/  [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*PRINT*/  [IAT.QUBIT, IAT.NONE, IAT.NONE],
-    /*FCNOT*/  [IAT.QUBIT, IAT.NONE, IAT.NONE]
+    /*NULL*/     [IAT.NONE  , IAT.NONE   , IAT.NONE ],
+    /*QUBIT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*IF*/       [IAT.QUBIT , IAT.OP1    , IAT.NONE ],
+    /*IFELSE*/   [IAT.QUBIT , IAT.OP1    , IAT.OP2  ],
+    /*MEASURE*/  [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*LOOP*/     [IAT.OP1   , IAT.NUMBER , IAT.NONE ],
+    /*ON*/       [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*APPLY*/    [IAT.OP1   , IAT.NONE   , IAT.NONE ],
+    /*LOAD*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*DUMP*/     [IAT.NONE  , IAT.NONE   , IAT.NONE ],
+    /*SREC*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*EREC*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*QSREC*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*QEREC*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*PRINT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
+    /*FCNOT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ]
 
 ];
 
@@ -71,97 +71,97 @@ bool valid_instruction(Instruction i) {
      */
     switch(i.opcode) {
         case Opcode.NULL:
-            return (i.qubit == 0 && 
-                    i.op1 == 0 && 
-                    i.op2 == 0 && 
-                    i.number ==0 );
+            return (i.qubit == 0x0 && 
+                    i.op1 == 0x0 && 
+                    i.op2 == 0x0 && 
+                    i.number == 0x0 );
 
         case Opcode.QUBIT:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
                     
         case Opcode.IF:
-            return (i.qubit != 0 &&
-                    ((i.op1 == 0) != (i.op2 == 0)) &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    ((i.op1 == 0x0) != (i.op2 == 0x0)) &&
+                    i.number == 0x0);
 
         case Opcode.IFELSE:
-            return (i.qubit != 0 &&
-                    i.op1 != 0 &&
-                    i.op2 != 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 != 0x0 &&
+                    i.op2 != 0x0 &&
+                    i.number == 0x0);
          
         case Opcode.MEASURE:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.LOOP:
-            return (i.qubit == 0 &&
-                    ((i.op1 == 0) != (i.op2 == 0)) &&
-                    i.number != 0);
+            return (i.qubit == 0x0 &&
+                    ((i.op1 == 0x0) != (i.op2 == 0x0)) &&
+                    i.number != 0x0);
 
         case Opcode.ON:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.APPLY:
-            return (i.qubit == 0 &&
-                    ((i.op1 == 0) != (i.op2 == 0)) &&
-                    i.number == 0);
+            return (i.qubit == 0x0 &&
+                    ((i.op1 == 0x0) != (i.op2 == 0x0)) &&
+                    i.number == 0x0);
 
         case Opcode.LOAD:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.DUMP:
-            return (i.qubit == 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit == 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.SREC:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.EREC:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
             
         case Opcode.QSREC:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.QEREC:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.PRINT:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
 
         case Opcode.FCNOT:
-            return (i.qubit != 0 &&
-                    i.op1 == 0 &&
-                    i.op2 == 0 &&
-                    i.number == 0);
+            return (i.qubit != 0x0 &&
+                    i.op1 == 0x0 &&
+                    i.op2 == 0x0 &&
+                    i.number == 0x0);
         default:
             return false;
     }
