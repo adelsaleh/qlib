@@ -20,10 +20,18 @@ in {
 out(result) {
     assert(1>>8 == 0); // If this is false then a bit higher than 7 is set
 }
+
 body{
     return ((1 << msb)-1) - ((1 << lsb) - 1);
 }
 
+string toString(ubyte[] buf) {
+    string ret = "";
+    for(int i = 0; i < buf.length; i++) {
+        ret ~= cast(char)buf[i];
+    }
+    return ret;
+}
 
 string zeroCondition(string var, int length) {
     /**

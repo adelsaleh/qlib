@@ -162,6 +162,11 @@ struct BitOutputStream {
         check([0x12, 0x40], [0x12, 0x1], [8, 2]);
         check([0x12, 0x34], [0x1, 0x8, 0x34], [4, 6, 6]);
     }
+    void writeString(string s) {
+        for(int i = 0; i < s.length; i++) {
+            writeNumber(s[i], 8);
+        }
+    }
 }
 
 class BitInputStream {
@@ -627,6 +632,10 @@ class FunctionSection : Section {
         }
         return buf;
     }
+
+    bool eof() {
+        return done;
+    }
 }
 
 class QbinFile {
@@ -744,4 +753,18 @@ unittest {
     assert(buf[3] == cast(ubyte)0x00);
     assert(buf[4] == cast(ubyte)0x00);
     assert(buf[5] == cast(ubyte)0x00);
+}
+
+void IdToByteArray(string id, ubyte[] buf) 
+in{
+    assert(id.length +2 < buf.length);
+    assert(id.length < (1<<14));
+}
+out{} 
+body{
+    buf[0] = 0x40 | cast(ubyte)(id.length >> 8);
+    buf[1] = cast(ubyte)(0xff & id.length);
+    for(int i = 0; i < id.length; i++) {
+        buf[i+2] = cast(ubyte)id[i];
+    }
 }
