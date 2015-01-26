@@ -40,7 +40,7 @@ string zeroCondition(string var, int length) {
     */
     string snippet = var~"[0] == 0";
     for(int i = 1; i < length; i++) {
-        snippet ~= " || " ~ var ~ "["~to!string(i)~"] == 0";
+        snippet ~= " && " ~ var ~ "["~to!string(i)~"] == 0";
     }
     return snippet;
 }
@@ -59,9 +59,12 @@ bool isEmptyLine(string line) {
 }
 
 
-void writeBuf(ubyte[] buf) {
-    writefln("[0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x]", buf[0], buf[1], buf[2]
-                                                   , buf[3], buf[4], buf[5]);
+void writeBuf(T)(T[] buf, ulong count=6) {
+    writef("[0x%x", buf[0]);
+    for(int i = 1; i < count; i++) {
+        writef(", 0x%x", buf[i]);
+    }
+    writeln("]");
 }
 
 int max(int a, int b) {

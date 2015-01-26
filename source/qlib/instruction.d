@@ -209,12 +209,14 @@ ubyte* instructionToByteSequence(Instruction ins, ubyte* seq) {
     seq[5] = (lineNum & 0x00ff);
     return seq;
 }
+/*
 
 Instruction parseInstruction(string instruction, IdentifierMap m, int lineNumber=0 ) {
     /**
      * Get an instruction representation based on the mironment
      * of the current program.
      */
+     /*
     int c = ' ';
     int i = 0;
     auto matcher = regex(r"\s*(?P<opcode>\w+)(\s+)?(?P<arg1>(\w+))?(\s+)?(?P<arg2>(\w+))?(\s+)?(?P<arg3>(\w+))?");
@@ -261,7 +263,7 @@ Instruction parseInstruction(string instruction, IdentifierMap m, int lineNumber
     }
     return ins;
 }
-
+*/
 string instructionToString(Instruction ins) {
     /**
      * Converts an instance of instruction to
