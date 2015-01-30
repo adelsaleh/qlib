@@ -20,6 +20,7 @@ struct Function {
 
 class CollapsingQueue(T) {
     /**
+     * TODO: Remove duplicates
      * A queue that can be cleared after a certain number of
      * elements are dequeued.
      */
@@ -151,12 +152,13 @@ class Program {
     FunctionPointer fp;
     bool term;
     IdentifierMap map;
-    this(string path) {
-        loadFromFile(path);
-        writeln("Reached");
+    this() {
+        term = false;
     }
-    ~this() {
-        writeln("Program Destructor called");
+    this(FunctionList fns, IdentifierMap m) {
+        functions = fns;
+        map = m;
+        term = false;
     }
 
     void loadFromFile(string path) {
@@ -278,7 +280,8 @@ class Program {
         f.flush();
         f.close();
 
-        Program p = new Program(path);
+        Program p = new Program();
+        p.loadFromFile(path);
         assert(p.functions.length == 1);
         assert(p.map.atIndex(1) == "A");
         assert(p.map.typeOf(1) == IdentifierType.QUBIT);

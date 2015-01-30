@@ -40,7 +40,6 @@ private string[] tokens = [
     "FCNOT"
 ];
 
-
 Opcode to_opcode(string token) {
     /**
      * Returns an opcode enum corresponding to token. Returns
@@ -52,7 +51,7 @@ Opcode to_opcode(string token) {
             return cast(Opcode)(i);
         }
     }
-    throw new Exception("Invalid Opcode Token");
+    return Opcode.NULL;
 }
 
 string to_instruction(Opcode op) {

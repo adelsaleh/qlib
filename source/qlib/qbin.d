@@ -14,6 +14,7 @@ import std.container.array;
 import qlib.util;
 import qlib.instruction;
 import qlib.asm_tokens;
+
 version(unittest) {
     import std.file;
 }
@@ -39,7 +40,7 @@ struct BitOutputStream {
         page = new ubyte[PAGE_SIZE];
         f = File(path, "w");
         byteOffset = 0;
-        bitOffset = 8;
+        bitOffset = BYTE_LENGTH;
         pageNum = 0;
         this.path = path;
         _size = 0;
@@ -52,7 +53,7 @@ struct BitOutputStream {
     }
 
     long size() {
-        if(bitOffset == 8) {
+        if(bitOffset == BYTE_LENGTH) {
             return _size;
         }else{
             return _size+1;
@@ -67,7 +68,7 @@ struct BitOutputStream {
         /**
          * Writes the contents of the page to the file.
          */
-        if(bitOffset != 8) { 
+        if(bitOffset != BYTE_LENGTH) { 
             f.rawWrite(page[0..byteOffset+1]);
         }else{
             f.rawWrite(page[0..byteOffset]);
@@ -76,7 +77,7 @@ struct BitOutputStream {
     }
 
     private void toNextByte() {
-        bitOffset = 8;
+        bitOffset = BYTE_LENGTH;
         byteOffset++;
         if(byteOffset == PAGE_SIZE) {
             nextPage();
@@ -104,8 +105,8 @@ struct BitOutputStream {
         bitsLeft -= bitOffset;
         page[byteOffset] |= (a >> bitsLeft);
         toNextByte();
-        while(bitsLeft > 8) {
-            bitsLeft -= 8;
+        while(bitsLeft > BYTE_LENGTH) {
+            bitsLeft -= BYTE_LENGTH;
             //writefln("0x%x", a >> bitsLeft);
             page[byteOffset] |= a >> (bitsLeft);
             toNextByte();
@@ -582,6 +583,7 @@ enum IdentifierType {
     FUNCTION,
     CLASSICAL
 }
+
 class IdentifierSection : Section {
     string _name;
     IdentifierType _type;

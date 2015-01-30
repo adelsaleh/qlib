@@ -217,52 +217,7 @@ Instruction parseInstruction(string instruction, IdentifierMap m, int lineNumber
      * of the current program.
      */
      /*
-    int c = ' ';
-    int i = 0;
-    auto matcher = regex(r"\s*(?P<opcode>\w+)(\s+)?(?P<arg1>(\w+))?(\s+)?(?P<arg2>(\w+))?(\s+)?(?P<arg3>(\w+))?");
-    auto matches = match(instruction, matcher).captures;
-    string opcode = matches["opcode"];
-    string[] args = [matches["arg1"], matches["arg2"], matches["arg3"]];
-    Instruction ins = Instruction(Opcode.NULL, 0, 0, 0, 0, lineNumber);
-    ins.opcode = to_opcode(opcode);
-    auto argTypes = argLocations[ins.opcode];
-    if(args.length == 1 && ins.opcode == Opcode.QUBIT) {
-        m.addIndex(args[0]);
-        int index = m.indexOf(args[0]);
-        return Instruction(Opcode.QUBIT, index, 0, 0, 0);
-    }
-    foreach(int idx, string arg; args) {
-        int iarg = m.indexOf(arg);
-        if(iarg == -1) {
-            m.addIndex(arg);
-            iarg = m.indexOf(arg);
-        }
-        if(iarg < 0) {
-            throw new Exception("Label "~arg~" is used before it is defined");
-        }
-        switch(argTypes[idx]) {
-            case(InstructionArgType.QUBIT):
-                ins.qubit = iarg;
-                break;
 
-            case (InstructionArgType.OP1):
-                ins.op1 = iarg;
-                break;
-
-            case (InstructionArgType.OP2):
-                ins.op2 = iarg;
-                break;
-
-            case (InstructionArgType.NUMBER):
-                ins.number = iarg;
-                break;
-
-            default:
-                break;
-        }
-    }
-    return ins;
-}
 */
 string instructionToString(Instruction ins) {
     /**
