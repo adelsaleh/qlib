@@ -45,10 +45,10 @@ class CollapsingQueue(T) {
         /**
          * EFFECTS: AF_post = AF + {el}
          */
-         for(int i = 0; i < queue.length; i++) {
-            if(el == queue[i]) {return;}
+         int index = queue.search(el);
+         if(index == -1) {
+             queue.insert(el);
          }
-         queue.insert(el);
     }
 
     void collapse() {

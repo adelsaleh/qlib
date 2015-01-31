@@ -2,6 +2,7 @@ module qlib.util;
 
 import std.stdio;
 import std.conv;
+import std.range;
 
 T instanceof(T)(Object o) if(is(T == class)) {
     return cast(T) o;
@@ -70,4 +71,17 @@ void writeBuf(T)(T[] buf, ulong count=6) {
 int max(int a, int b) {
     if(a > b) return a;
     return b;
+}
+
+int search(T, V)(T a, V el) if(isRandomAccessRange!T) {
+    /**
+     * Returns the index of element el if it exists in a,
+     * else returns -1.
+     */
+    for(int i = 0; i < a.length; i++) {
+        if(a[i] == el) {
+            return i;
+        }
+    }
+    return -1;
 }
