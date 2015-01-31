@@ -26,7 +26,8 @@ class CollapsingQueue(T) {
      */
     Array!T queue;
     /*
-     * AF(queue) = [x for all x in queue]
+     * AF(queue) = {x for all x in queue} where AF is ordered by
+     *              insertion.
      */
 
     T dequeue() {
@@ -42,8 +43,11 @@ class CollapsingQueue(T) {
 
     void enqueue(T el) {
         /**
-         * EFFECTS: AF_post = AF + [el]
+         * EFFECTS: AF_post = AF + {el}
          */
+         for(int i = 0; i < queue.length; i++) {
+            if(el == queue[i]) {return;}
+         }
          queue.insert(el);
     }
 
