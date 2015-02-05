@@ -12,39 +12,42 @@ struct FunctionPointer {
 }
 struct Function {
     /*
-     * AF(index, instructions) = [i for i in instructions] 
+     * AF(index, instructions) = list of instructions 
      */
     int index;
     Array!Instruction instructions;
 }
 
+/**
+ * A queue that can be cleared after a certain number of
+ * elements are dequeued.
+ */
 class CollapsingQueue(T) {
-    /**
-     * TODO: Remove duplicates
-     * A queue that can be cleared after a certain number of
-     * elements are dequeued.
-     */
     Array!T queue;
     /*
-     * AF(queue) = {x for all x in queue} where AF is ordered by
-     *              insertion.
+     * AF(queue) = A list of Ts
+     * REP INVARIANT: for each x,y in queue, x != y.
      */
 
+    /**
+     * Removes an element from the start of the queue.
+     *
+     * Requires: queue is not empty.
+     * Effects: AF_post = AF[1:]
+     * Returns: AF[0]
+     */
     T dequeue() {
-        /**
-         * REQUIRES: queue is not empty.
-         * EFFECTS: AF_post = AF[1:]
-         * RETURNS AF[0]
-         */
+        
         T el = queue[0];
         queue = queue[1..$];
         return el;
     }
-
+    /**
+     * EFFECTS: AF_post = AF + [el] if el in AF,
+     *          else AF
+     */
     void enqueue(T el) {
-        /**
-         * EFFECTS: AF_post = AF + {el}
-         */
+
          int index = queue.search(el);
          if(index == -1) {
              queue.insert(el);
@@ -67,10 +70,16 @@ alias FunctionList = Function[int];
 
 struct IdentifierMap {
     /**
-     *
+     * A two way mapping between identifiers and their
+     * indices.
      */
 
     /*
+     * AF(indices, types, names) = {x | x = [index, type, name], 
+     *                              for each index in indices.values,
+     *                                       type in types.values,
+     *                                       name in indices.keys}
+     *
      * REP INVARIANT: indices.size == names.size,
      *                indices[names[i]] == i for all i in names.keys
      */
@@ -81,47 +90,51 @@ struct IdentifierMap {
     /*
      * AF(indices, name) = [(key, value) for each key, value in indices]
      */
-    ~this() {
-        writeln("IdentifierMap destructor called");
-    }
 
-    invariant {
-        
-
-    }
-    
-
+    /**
+     * Returns: An iterator that goes through the sorted list of
+     *          indices.
+     */
     auto byIndex() {
         return names.keys.sort;
     }
 
+    /**
+     * Fetches the identifier at index i
+     * Params:
+     *      i = index of identifier
+     * Returns: el[1] s.t. el in AF and el[0] = i
+     */
+
     string atIndex(int i) {
-        /**
-         * REQUIRES: i is a valid key in names
-         * EFFECTS: Gets the identifier name at the index i
-         */
          return names[i];
     }
 
+    /**
+     * Fetches the index of the identifier name.
+     * Params:
+     *      name = The identifier to look up.
+     * Returns: el[1] s.t. el in AF and el[0] = i
+     */
     int indexOf(string name) {
-        /**
-         * EFFECTS: Gets the index of the identifier.
-         */
-         return indices[name];
+         if(name in indices) {
+             return indices[name];
+         }
+         return -1;
     }
 
     IdentifierType typeOf(int index) {
         return types[index];
     }
-
+    /**
+     * Adds name with the index i 
+     * Requires: Neither i nor name exist in indices or names.
+     */
     void addIndex(string name, IdentifierType type, int i = -1) 
     in{
         assert(i >= -1);
     }
     out{
-        writeln(names);
-        writeln(types);
-        writeln(indices);
         assert(indices.length == names.length);
         foreach(string id; indices.byKey()) {
             int idx = indices[id];
@@ -129,18 +142,13 @@ struct IdentifierMap {
         }
     }
     body{
-        /**
-         * REQUIRES: neither i nor name exist in indices or names.
-         * EFFECTS: adds name with the index i 
-         */
+      
         if(i == -1) { i = maxIndex; }
         assert(name !in indices);
         indices[name] = i;
         names[i] = name;
         types[i] = type;
-        writeln(maxIndex);
         maxIndex = max(i, maxIndex)+1;
-        writeln(maxIndex);
     }
 
 }
@@ -220,7 +228,6 @@ class Program {
             bos.writeNumber(0, 32);
             bos.writeNumber(0, 16);
         }
-        bos.flush();
     }
 
     Instruction front() {

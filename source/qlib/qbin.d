@@ -1,8 +1,17 @@
 /**
- * This module contains the functions to interact with a qbin file.
+ * Contains the utilities necessary for writing, reading and processing
+ * qbin files.
+ * 
  * Definitions of the notation used in the documentation:
- *      <a_x .. a_y> is a sequence with the index starting at x and ending
- *                   at y. x, y belong to N
+ *
+ * Authors: George Zakhour, Adel Saleh, Bayan Rafeh
+ * Date: Feb 5, 2015
+ *
+ */
+
+/* 
+ * AF: The abstraction function which takes all the instance variables
+ * of the class.
  */
 
 module qlib.qbin;
@@ -25,17 +34,41 @@ const int BYTE_LENGTH = 8;
 
 struct BitOutputStream {
     /**
-     * A BitOutputStream is a sequence of ints of arbitrary bit-length written
-     * to a file.
+     * A BitOutputStream is a sequence of bits being written to file.
+     */
+
+    /* A list notation prefixed with F indicates a file.
+     * A file is a sequence of bits.
+     *
+     * AF_prevPage = AF(page, f, PAGE_SIZE, 0, pageNum-1, PAGE_SIZE)
+     *
+     * AF(page, f, byteOffset, bitOffset, pageNum, size): 
+     *                      F[0..len],
+     *                      len = byteOffset*BYTE_SIZE + bitOffset
+     *
+     * REP INVARIANT: f[p(pageNum)..p(pageNum+1)] = page[0..PAGE_SIZE]
+     *                              if byteOffset = 0 && bitOffset = 8 
+     *                                                && f.isOpen
+     *                f[p(pageNum) .. size] = page[0..byteOffset]
+     *                              if !f.isOpen
+     *                where p(num) = PAGE_SIZE*(num-1)*BYTE_LENGTH
      */
     ubyte[] page;
     File f;
     long byteOffset;
     long bitOffset;
     int pageNum;
-    string path;
     long _size;
 
+    string path;
+
+    /**
+     * Creates a new BitOutputStream written to the file
+     * at path. If file doesn't exist, it will be created.
+     * 
+     * Params:
+     *      path = The path of the file to be written.
+     */
     this(string path) {
         page = new ubyte[PAGE_SIZE];
         f = File(path, "w");
@@ -46,12 +79,22 @@ struct BitOutputStream {
         _size = 0;
     }
 
+    /**
+     * Writes the bits left in the buffer and
+     * closes the file.
+     */
     ~this() {
-        //writeln("BitOutputStream Destructor called");
+        if(bitOffset != BYTE_LENGTH) { 
+            f.rawWrite(page[0..byteOffset+1]);
+        }else{
+            f.rawWrite(page[0..byteOffset]);
+        }
         f.flush();
         f.close();
     }
-
+    /**
+     * Returns: The size of the file written so far.
+     */
     long size() {
         if(bitOffset == BYTE_LENGTH) {
             return _size;
@@ -59,21 +102,14 @@ struct BitOutputStream {
             return _size+1;
         }
     }
+
+    /**
+     * Writes the contents of the current page and moves
+     * clears the buffer.
+     */
     private void nextPage() {
         f.rawWrite(page);
         byteOffset = 0;
-    }
-
-    void flush() {
-        /**
-         * Writes the contents of the page to the file.
-         */
-        if(bitOffset != BYTE_LENGTH) { 
-            f.rawWrite(page[0..byteOffset+1]);
-        }else{
-            f.rawWrite(page[0..byteOffset]);
-        }
-        f.flush();
     }
 
     private void toNextByte() {
@@ -87,6 +123,21 @@ struct BitOutputStream {
         _size++;
     }
 
+
+    /**
+     * Writes length bits from a to the stream.
+     *
+     * More formally,
+     * bin(x) = [x(i) for every 0 < i <= 32] if x is an int 
+     *                      where x(i) is the ith
+     *                      most significant bit in x
+     * int(arr) = an int where arr[i] is the ith most significant bit
+     * AF_post = AF + int(bin(a)[0..length])
+     *
+     * Params:
+     *      a = the integer containing the bits you want to write
+     *      length = the number of bits to write.
+     */
     void writeNumber(int a, int length) 
     in { assert(length >= 0 && length <= 32); }
     out {}
@@ -129,7 +180,6 @@ struct BitOutputStream {
             for(int i = 0; i < write.length; i++) {
                 bos.writeNumber(write[i], length[i]);
             }
-            bos.flush();
         }
 
         void check(ubyte[] check, int[] written, int[] length) {
@@ -185,16 +235,16 @@ class BitInputStream {
      */
 
     /*
-     * Assuming a file is a list of buffers of size PAGE_SIZE
-     * len(f) is the number of bytes in the file f
+     * AF(f, page, pageNum, byteOffset, bitOffset) = a list of bits, big endian
+     *                                               bit order and little endian
+     *                                               byte order.
      *
-     * Assume a file is a list of bytes.
-     *
-     * AF(f, page, pageNum, byteOffset, bitOffset) = <a_c .. a_(f.size*8)>
-     *               where a_n = bit(f[n/8], n%8)
-     *               c = bit(f[pageNum*PAGE_SIZE + byteOffset], bitOffset)
-     *               bit(byte, offset) = (byte & 1 << (8-offset)) >> 8-offset
-     *
+     * REP INVARIANT: f[pageStart..pageEnd] = page[0..head]
+     *                  where pageStart = PAGE_SIZE*pageNum*BYTE_LENGTH,
+     *                        pageEnd = pageStart + PAGE_SIZE*BYTE_LENGTH
+     *                0 <= byteOffset < PAGE_SIZE
+     *                0 < bitOffset <= 8
+     *                0 <= pageNum*PAGE_SIZE + byteOffset <= f.size
      *
      * Abbreviations: AF = AF(f, page, pageNum, byteOffset, bitOffset)
      */
@@ -206,7 +256,11 @@ class BitInputStream {
     int pageNum;
     ulong size;
     //note: current bit = 8*byteOffset + bitOffset
-
+    /**
+     * Creates a new BitInputStream.
+     * Params:
+     *      path = Path of the file to read from
+     */
     this(string path) {
         //writeln("Reached");
         page = new ubyte[PAGE_SIZE];
@@ -223,12 +277,8 @@ class BitInputStream {
         //writeln("BitInputStream destructor called");
     }
 
-    invariant() {
+//    invariant() {
         /*
-         * REP INVARIANT: page = f[pageNum*PAGE_SIZE..(pageNum+1)*PAGE_SIZE]
-         *                0 <= byteOffset < PAGE_SIZE
-         *                0 < bitOffset <= 8
-         *                0 <= pageNum*PAGE_SIZE + byteOffset <= f.size
          */
         // 0 <= byteOffset < PAGE_SIZE
 //        assert(byteOffset >= 0 && byteOffset < PAGE_SIZE);
@@ -239,42 +289,42 @@ class BitInputStream {
         // 0 <= pageNum * PAGE_SIZE + byteOffset < f.size
 //        long currentByte = pageNum*PAGE_SIZE + byteOffset;
 //        assert(currentByte >= 0 && currentByte <= size);
-    }
-    
+//    }
+
+    /**
+     * Loads the next page of bytes from the file.
+     */
     private void loadNextPage() {
-        /**
-         * EFFECTS: Loads the next page of bytes from the file.
-         * MODIFIES: pageNum, page
-         */
-        f.rawRead(page);
+            f.rawRead(page);
     }
 
+    /*
+     * Returns: The total number of bytes read.
+     */
     private long bytesRead() {
         return pageNum*PAGE_SIZE + byteOffset;
 
     }
-
+    /*
+     * Moves the stream to the next byte in the buffer, and loads
+     * the next page if we reached the end
+     */
     private void toNextByte() {
-        /**
-         * Moves the stream to the next byte in the buffer, and loads
-         * the next page if we reached the end
-         */
-        if(byteOffset < PAGE_SIZE-1) { 
+            if(byteOffset < PAGE_SIZE-1) { 
             byteOffset ++;
         }else{
             loadNextPage();
             byteOffset = 0;
         }
     }
-
+    /*
+     * Reads bits until we are byte aligned.
+     * EFFECTS: AF_post = AF[bitOffset .. AF.length]
+     * MODIFIES: pageNum, bitOffset, byteOffset, page,
+     * Returns: int(AF[0..8-bitOffset])
+     */
     private int readUntilAligned() { 
-        /**
-         * Reads bits until we are byte aligned.
-         * 
-         * EFFECTS: AF_post = <a_d .. #AF> where d = c+bitOffset
-         * MODIFIES: pageNum, bitOffset, byteOffset, page,
-          * RETURNS: an int containing <a_c .. a_d>
-         */
+        
 
         int ret = extractValue(page[byteOffset], bitOffset, 0);
         toNextByte(); 
@@ -282,7 +332,9 @@ class BitInputStream {
         return ret; 
     }
 
-    
+    /*
+     * Returns: int(b[top..bottom])
+     */
     private int extractValue(ubyte b, long top, long bottom) {
         int mask = bitMask(top, bottom);
         return (mask & b) >> (bottom);
@@ -293,17 +345,16 @@ class BitInputStream {
         ulong bitsRead = bytesRead + pageNum*PAGE_SIZE*8;
         return (size*8) - (8*bytesRead + (8 - bitOffset)); 
     }
-
+    /**
+     * Read a number from the stream and store it in an int.
+     * Formally, AF_post = AF[length .. AF.length]
+     * 
+     * Params:
+     *      length = a number between 0 and 32 inclusive
+     * Returns: int(AF[0 .. length]).
+     *
+     */
     int readNumber(int length) 
-        /**
-         * Read a number from the stream and store it in an int.
-         * REQUIRES: length 0 <= length <= 32
-         * EFFECTS: AF_post = <AF_(c+length) .. #AF>
-         *
-         * RETURNS: An int containing <a_c .. a_(c+length)>.
-         *
-         * 1 1 1 1  1 1 1 1
-         */
     in { assert(length >= 0 && length <= 32); }
     out(result) {}
     body{
@@ -492,44 +543,13 @@ class BitInputStream {
     }
     
 
-    char readChar(int length) {
-
-        /**
-         * Read a number from the stream and store it in a char.
-         * REQUIRES: length 0 < length <= 8
-         * EFFECTS: AF_post = <a_(c+length) .. a_f.size>
-         *
-         * RETURNS: A char containing <a_c .. a_(c+length)>.
-         */
-        return '\0';
-    }
-    
-    ubyte readByte() {
-        /**
-         * Read a number from the stream and store it in a char.
-         * REQUIRES: length 0 < length <= 8
-         * EFFECTS: AF_post = <a_(c+length) .. a_f.size>
-         *
-         * RETURNS: A char containing <a_c .. a_(c+length)>.
-         */
-
-        ubyte ret = 0x0;
-        return ret;
-    }
-
-    void readByteArray(ubyte[] buf) {
-        for(int i = 0; i < buf.length; i++) {
-            buf[i] = cast(ubyte)readNumber(8);
-            //writefln("0x%x", buf[i]);
-        }
-        writeBuf(buf);
-    }
-
+    /**
+     * Returns: true if we reached eof, false otherwise.
+     */
     bool empty() {
         return bytesRead == size;
     }
 }
-//01001100110100001001
 
 
 
@@ -538,9 +558,16 @@ enum SectionType {
     IDENTIFIER
 }
 
+/**
+ * A qbin file is split into sections, each section containing a
+ * different kind of information. This class just holds common
+ * internal information used by the section.
+ */
+
 class Section {
     protected BitInputStream bs;
     protected int headerVal; //The 14 bit integer that follows the header.
+    
     protected this(int hv, BitInputStream bs) {
         this.headerVal = hv;
         this.bs = bs;
@@ -549,13 +576,20 @@ class Section {
     ~this() {
         //writeln("Section destructor called");
     }
-
+    /**
+     * Reads a new section header from the provided
+     * stream, and returns a Section object corresponding
+     * to the type of section read from the stream.
+     * 
+     * Requires: The stream be set at the start of a section.
+     * Params:
+     *      bs = The BitInputStream to read from.
+     * Returns: A according to the type read from the stream.
+     */
     static Section createSection(BitInputStream bs) {
         if(bs.empty()) {
             //writeln("EMPTY");
             return null;
-        }else{
-            //writeln("NOT EMPTY");
         }
         SectionType type = cast(SectionType)bs.readNumber(2);
         int hv = bs.readNumber(14);
@@ -570,7 +604,11 @@ class Section {
                 throw new Exception("Invalid section type.");
         }
     }
-
+    /**
+     * The header of each section in a qbin file contains 2 bits,
+     * representing a type, and a 14 bit value which is defined
+     * according to the section type.
+     */
     int hvalue() {
         return headerVal;
     }
@@ -584,10 +622,21 @@ enum IdentifierType {
     CLASSICAL
 }
 
+
+/**
+ * An IdentifierSection is a section of a qbin file
+ * containing an identifier corresponding to a qubit,
+ * function etc. in a qbin file. The identifiers are
+ * numbered according to order.
+ */
 class IdentifierSection : Section {
     string _name;
     IdentifierType _type;
     int size;
+    /**
+     * Reads the identifier from the stream and
+     * stores it.
+     */
     protected this(int hv, BitInputStream bs) {
         super(hv, bs);
         _type = cast(IdentifierType)this.hvalue >> 12;
@@ -599,10 +648,13 @@ class IdentifierSection : Section {
         //writeln("IdentifierSection destructor called");
     }
     
+    /**
+     * Returns: The type of the identifier.
+     */
     IdentifierType type() {
         return _type;
     }
-
+    
     private string readName() {
         string name = "";
         for(int i = 0; i < size; i++) {
@@ -610,10 +662,15 @@ class IdentifierSection : Section {
         }
         return name;
     }
-
+    
+    /**
+     * Gets the string stored by the identifier.
+     */
     string name() {
         return _name;
     }
+
+    bool empty() {return true;}
 }
 
 const int INSTRUCTION_LENGTH = 6;
@@ -621,7 +678,10 @@ const int INSTRUCTION_LENGTH = 6;
 alias RawInstructionBuffer = ubyte[INSTRUCTION_LENGTH];
 
 
-
+/**
+ * FunctionSection: A section representing a qbin function, which
+ *              is a sequence of instructions.
+ */
 class FunctionSection : Section {
     bool done;
     Instruction current;
@@ -638,11 +698,16 @@ class FunctionSection : Section {
     ~this() {
         //writeln("FunctionSection destructor called");
     }
-
+    /**
+     * Returns: The current instruction.
+     */
     public Instruction front() {
         return current;  
     }
 
+    /**
+     * Loads the next instruction from the stream.
+     */
     public void popFront() {
         Opcode opcode = cast(Opcode)bs.readNumber(4);
         int qubit = bs.readNumber(7);
@@ -652,7 +717,10 @@ class FunctionSection : Section {
         int lineNumber = bs.readNumber(16);
         current = Instruction(opcode, qubit, op1, op2, number, lineNumber);
     }
-
+    
+    /**
+     * Returns: true if we reached the end of the function in the stream.
+     */
     bool empty() {
         bool done = current.opcode == Opcode.NULL && current.qubit == 0
                                                   && current.op1 == 0
@@ -663,6 +731,10 @@ class FunctionSection : Section {
     }
 }
 
+
+/**
+ * An iterator that goes through the sections in a qbin file.
+ */
 struct QbinFileReader {
     BitInputStream bs;
     Section current;
@@ -759,7 +831,12 @@ unittest {
     //writefln("Identifier: 0x%x", fn.identifier);
     assert(fn.identifier == 0x02);
 }
-
+/**
+ * Converts a string into a byte array.
+ * Params:
+ *      id = string to convert to a byte array
+ *      buf = the buffer we need to place the byte array in
+ */
 void IdToByteArray(string id, ubyte[] buf) 
 in{
     assert(id.length +2 < buf.length);
