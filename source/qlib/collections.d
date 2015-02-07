@@ -6,16 +6,21 @@ import qlib.instruction;
 import qlib.util;
 import std.container.array;
 
+/**
+ * A marker for where we are in the program currently.
+ */
+
 struct FunctionPointer {
-    Function current;
-    int instruction;
+    Function current; ///The function we're on right now.
+    int instruction; /// The index of the instruction in the current function.
 }
+
+/**
+ * A container for a function.
+ */
 struct Function {
-    /*
-     * AF(index, instructions) = list of instructions 
-     */
-    int index;
-    Array!Instruction instructions;
+    int index; /// Index of the function in the program's IdentifierMap
+    Array!Instruction instructions; /// The instructions in this function
 }
 
 /**
@@ -53,11 +58,10 @@ class CollapsingQueue(T) {
              queue.insert(el);
          }
     }
-
+    /**
+     * EFFECTS: AF = []
+     */
     void collapse() {
-        /**
-         * EFFECTS: AF = []
-         */
         queue.empty();
     }
 
@@ -153,17 +157,21 @@ struct IdentifierMap {
 
 }
 
-class Program {
-    /**
-     * AF(functions, fp)=A program with functions f where
-     *                   the current instruction is made by
-     *                   fp.
-     */
+/**
+ * A wrapper for a qbin file. It is essentially an iterator that
+ * iterates over the instructions in a qbin file.
+ *
+ * No semantics are implemented here though. It is the job of
+ * the client to manipulate this iterator's output depending on the
+ * semantic meaning of the instructions being read.
+ */
 
-    FunctionList functions;
-    FunctionPointer fp;
-    bool term;
-    IdentifierMap map;
+class Program {
+
+    private FunctionList functions;
+    private FunctionPointer fp;
+    private bool term;
+    private IdentifierMap map;
     this() {
         term = false;
     }
@@ -173,10 +181,31 @@ class Program {
         term = false;
     }
 
+    /**
+     * Converts an instance of instruction to
+     * a valid string.
+     */
+    string instructionToString(Instruction ins) {
+
+        string ins_string = "";
+        auto argTypes = argLocations[ins.opcode];
+        ins_string ~= to_instruction(ins.opcode);
+        ins_string ~= " ";
+        foreach(int i, InstructionArgType at; argTypes) {
+            if (at != InstructionArgType.NONE){
+                ins_string ~= " " ~ map.atIndex(select_field_by_type(ins, at));
+            }
+        }
+        return ins_string;
+    }
+
+    /**
+     * Load a program from a qbin file specified by path.
+     * Params:
+     *      path = Path of the qbin file to load from.
+     */
     void loadFromFile(string path) {
-        /**
-         * Load a program from a qbin file specified by path.
-         */
+    
         writeln("Reached");
         QbinFileReader qbin = QbinFileReader(path);
         foreach(Section s; qbin) {
@@ -197,10 +226,13 @@ class Program {
         }
     }
 
+    /**
+     * Stores the program in qbin format at the specified path.
+     * Params:
+     *      path = Path to save program in.
+     */
     void save(string path) {
-        /**
-         * Stores the program in a qbin file at the specified path.
-         */
+    
         BitOutputStream bos = BitOutputStream(path);
         //Write signature
         bos.writeNumber(0x10545e38, 32);
@@ -234,38 +266,50 @@ class Program {
         return fp.current.instructions[fp.instruction];
     }
 
+    /**
+     * Move to the next instruction in the function.
+     */
     void popFront() {
-        /**
-         * Move to the next instruction in the function.
-         */
+    
         if(!endOfFunction) {
             fp.instruction += 1;
         }
     }
 
+    /**
+     * Checks whether the end of the current function has
+     * been reached.
+     * Returns:
+     *      true if we reached the end of current function, false otherwise
+     */
     bool endOfFunction() {
         return fp.current.instructions.length < fp.instruction-1;
     }
 
+    /**
+     * Checks whether the program has terminated.
+     * Returns:
+     *      true if terminated, false otherwise
+     */
     bool empty() {
-        /**
-         * Returns whether the program has terminated.
-         */
-        return term;
+            return term;
     }
 
+    /**
+     * Marks the program as terminated. This iterator
+     * will not end until this method is called.
+     */
     void terminate() {
-        /**
-         * Marks the program as terminated
-         */
          term = true;
     }
 
+    /**
+     * Switches the current function to the one marked
+     * at index.
+     * Params:
+     *      index = index of the function to switch to.
+     */
     void switchFunction(int index) {
-        /**
-         * Switches the current function to the one marked
-         * at index.
-         */
          fp.current = functions[index];
          fp.instruction = 0;
     }

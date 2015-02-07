@@ -4,6 +4,11 @@ import qlib.asm_tokens;
 import std.regex;
 import std.conv;
 import qlib.collections;
+
+/**
+ * Holds the different arguments of an instruction,
+ * used for processing by the VM.
+ */
 struct Instruction {
     Opcode opcode;
     int qubit;
@@ -14,7 +19,10 @@ struct Instruction {
 }
 
 
-// TODO: Figure out a better place to put this section.
+/**
+ * The different types of possible arguments in
+ * an instruction.
+ */
 enum InstructionArgType {
     NONE,
     QUBIT,
@@ -25,6 +33,10 @@ enum InstructionArgType {
 
 alias IAT = InstructionArgType;
 
+/**
+ * When writing assembly, each instruction has a maximum
+ * of 3 arguments. This array specifies what they are.
+ */
 InstructionArgType[][] argLocations = [
     /*NULL*/     [IAT.NONE  , IAT.NONE   , IAT.NONE ],
     /*QUBIT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
@@ -45,6 +57,17 @@ InstructionArgType[][] argLocations = [
 
 ];
 
+/**
+ * Return the element of instruction according to the provided type.
+ *
+ * Params:
+ *      ins = The instruction to select from.
+ *      iat = The type of parameter to select.
+ * Returns:
+ *      The value of the element from instruction of type iat,
+ *      so select_field_by_type(ins, IAT.QUBIT) returns ins.qubit
+ *      for example.
+ */
 int select_field_by_type(Instruction ins, InstructionArgType iat) {
     switch(iat) {
         case(InstructionArgType.QUBIT):
@@ -64,13 +87,17 @@ int select_field_by_type(Instruction ins, InstructionArgType iat) {
     }
 }
 
-//End section
-
+/**
+ * Strictly validates the instruction, i.e. any parameters
+ * that are not needed by the opcode MUST be 0 for this function
+ * to validate the instruction.
+ *
+ * Params:
+ *      i = instruction to be validates
+ * Returns:
+ *      true if i is valid, false otherwise.
+ */
 bool valid_instruction(Instruction i) {
-    /**
-     * Strictly validates the instruction, i.e. any parameters
-     * that are not needed by the opcode MUST be 0.
-     */
     switch(i.opcode) {
         case Opcode.NULL:
             return (i.qubit == 0x0 && 
@@ -167,71 +194,4 @@ bool valid_instruction(Instruction i) {
         default:
             return false;
     }
-}
-
-Instruction toInstruction(ubyte[] byte_sequence) {
-    /**
-     * Reads the instruction from the byte sequence.
-     * Throws an exception if bytecode is invalid.
-     */
-
-     int opcode = (byte_sequence[0] & 0xf0) >> 4;
-     int qubit = ((byte_sequence[0] & 0x0f) << 4) | (byte_sequence[1] >> 5);
-     int op1 = ((byte_sequence[1] & 0x1f << 3) | (byte_sequence[2] >> 6));
-     int op2 = ((byte_sequence[2] & 0x3f <<  2) | (byte_sequence[3] >> 7));
-     int number = 0xef & byte_sequence[3];
-     int lineNumber = (byte_sequence[4] << 8) | byte_sequence[5];
-     return Instruction(cast(Opcode)opcode, qubit, op1, op2, number);
-}
-
-
-ubyte* instructionToByteSequence(Instruction ins, ubyte* seq) {
-    ubyte opcode = cast(ubyte)ins.opcode;
-    seq[0] |= opcode << 4;
-
-    int qubit = ins.qubit;
-    seq[0] |= qubit & 0x78 >> 3;
-    seq[1] |= (qubit & 0x07) << 5;
-
-    int op1 = ins.op1;
-    seq[1] |= (op1 & 0x7c) >> 2;
-    seq[2] |= (op1 & 0x03) << 6;
-
-    int op2 = ins.op2;
-    seq[2] |= (op2 & 0x7e) >> 1;
-    seq[3] |= (op2 & 0x01) << 7;
-
-    int number = ins.number;
-    seq[3] |= 0x7f & number;
-
-    int lineNum = ins.lineNumber;
-    seq[4] = (lineNum & 0xff00) >> 8;
-    seq[5] = (lineNum & 0x00ff);
-    return seq;
-}
-/*
-
-Instruction parseInstruction(string instruction, IdentifierMap m, int lineNumber=0 ) {
-    /**
-     * Get an instruction representation based on the mironment
-     * of the current program.
-     */
-     /*
-
-*/
-string instructionToString(Instruction ins) {
-    /**
-     * Converts an instance of instruction to
-     * a valid string.
-     */
-    string ins_string = "";
-    auto argTypes = argLocations[ins.opcode];
-    ins_string ~= to_instruction(ins.opcode);
-    ins_string ~= " ";
-    foreach(int i, InstructionArgType at; argTypes) {
-        if (at != InstructionArgType.NONE){
-            ins_string ~= " " ~ to!string(select_field_by_type(ins, at));
-        }
-    }
-    return ins_string;
 }
