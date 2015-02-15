@@ -4,7 +4,35 @@ import std.stdio;
 import qlib.qbin;
 import qlib.instruction;
 import qlib.util;
+import std.container.slist;
 import std.container.array;
+
+
+/**
+ * It's a fucking stack.
+ */
+struct Stack(T) {
+
+     Array!(T) stack;
+
+    void push(T el) {
+        stack.insert(el);
+    }
+
+    T pop() {
+        T el = stack[$-1];
+        stack.removeBack();
+        return el;
+    }
+
+    T peek() {
+        return stack[$-1];
+    }
+
+    ulong size() {
+        return stack.length;
+    }
+}
 
 /**
  * A marker for where we are in the program currently.
@@ -28,7 +56,7 @@ struct Function {
  * elements are dequeued.
  */
 class CollapsingQueue(T) {
-    Array!T queue;
+    SList!T queue;
     /*
      * AF(queue) = A list of Ts
      * REP INVARIANT: for each x,y in queue, x != y.
@@ -41,10 +69,15 @@ class CollapsingQueue(T) {
      * Effects: AF_post = AF[1:]
      * Returns: AF[0]
      */
+    int _size;
+    this() {
+        _size = 0;
+    }
+
     T dequeue() {
-        
-        T el = queue[0];
-        queue = queue[1..$];
+        T el = queue.front;
+        queue.removeFront(1);
+        _size -=1;
         return el;
     }
     /**
@@ -56,13 +89,19 @@ class CollapsingQueue(T) {
          int index = queue.search(el);
          if(index == -1) {
              queue.insert(el);
+             _size+=1;
          }
     }
     /**
      * EFFECTS: AF = []
      */
     void collapse() {
-        queue.empty();
+        queue.clear();
+        _size = 0;
+    }
+
+    ulong size() {
+        return _size;
     }
 
     ~this() {
@@ -84,6 +123,7 @@ struct IdentifierMap {
      *                                       type in types.values,
      *                                       name in indices.keys}
      *
+     * In docs, INDEX = 0, TYPE = 1, NAME = 2
      * REP INVARIANT: indices.size == names.size,
      *                indices[names[i]] == i for all i in names.keys
      */
@@ -91,9 +131,6 @@ struct IdentifierMap {
     private IdentifierType[int] types; 
     private string[int] names;
     private int maxIndex = 1;
-    /*
-     * AF(indices, name) = [(key, value) for each key, value in indices]
-     */
 
     /**
      * Returns: An iterator that goes through the sorted list of
@@ -107,7 +144,7 @@ struct IdentifierMap {
      * Fetches the identifier at index i
      * Params:
      *      i = index of identifier
-     * Returns: el[1] s.t. el in AF and el[0] = i
+     * Returns: el[NAME] where el in AF and el[INDEX] = i
      */
 
     string atIndex(int i) {
@@ -118,7 +155,7 @@ struct IdentifierMap {
      * Fetches the index of the identifier name.
      * Params:
      *      name = The identifier to look up.
-     * Returns: el[1] s.t. el in AF and el[0] = i
+     * Returns: el[INDEX] s.t. el in AF and el[NAME] = name
      */
     int indexOf(string name) {
          if(name in indices) {

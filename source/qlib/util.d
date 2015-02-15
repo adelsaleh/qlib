@@ -131,12 +131,13 @@ int max(int a, int b) {
  *      the index of element el if it exists in a,
  *      else returns -1.
  */
-int search(T, V)(T a, V el) if(isRandomAccessRange!T) {
-
-    for(int i = 0; i < a.length; i++) {
-        if(a[i] == el) {
+int search(T, V)(T a, V el)  {
+    int i = 0;
+    foreach(V e; a) {
+        if(e == el) {
             return i;
         }
+        i++;
     }
     return -1;
 }
