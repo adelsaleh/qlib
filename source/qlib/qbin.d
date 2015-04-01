@@ -29,7 +29,7 @@ version(unittest) {
 }
 
 const int SIGNATURE = 0x10545e38;
-const long PAGE_SIZE = 1024*4096L;
+const uint PAGE_SIZE = 1024*4096L;
 const int BYTE_LENGTH = 8;
 
 struct BitOutputStream {
@@ -55,10 +55,10 @@ struct BitOutputStream {
      */
     ubyte[] page;
     File f;
-    long byteOffset;
-    long bitOffset;
+    uint byteOffset;
+    uint bitOffset;
     int pageNum;
-    long _size;
+    uint _size;
 
     string path;
 
@@ -95,7 +95,7 @@ struct BitOutputStream {
     /**
      * Returns: The size of the file written so far.
      */
-    long size() {
+    uint size() {
         if(bitOffset == BYTE_LENGTH) {
             return _size;
         }else{
@@ -250,8 +250,8 @@ class BitInputStream {
      */
     ubyte[] page;
     File f;
-    long byteOffset;
-    long bitOffset; 
+    uint byteOffset;
+    uint bitOffset; 
     string path;
     int pageNum;
     ulong size;
@@ -287,7 +287,7 @@ class BitInputStream {
 //        assert(bitOffset > 0 && bitOffset <= 8);
 
         // 0 <= pageNum * PAGE_SIZE + byteOffset < f.size
-//        long currentByte = pageNum*PAGE_SIZE + byteOffset;
+//        uint currentByte = pageNum*PAGE_SIZE + byteOffset;
 //        assert(currentByte >= 0 && currentByte <= size);
 //    }
 
@@ -301,7 +301,7 @@ class BitInputStream {
     /*
      * Returns: The total number of bytes read.
      */
-    private long bytesRead() {
+    private uint bytesRead() {
         return pageNum*PAGE_SIZE + byteOffset;
 
     }
@@ -335,14 +335,14 @@ class BitInputStream {
     /*
      * Returns: int(b[top..bottom])
      */
-    private int extractValue(ubyte b, long top, long bottom) {
+    private int extractValue(ubyte b, uint top, uint bottom) {
         int mask = bitMask(top, bottom);
         return (mask & b) >> (bottom);
     }
 
-    private long bitsLeftInFile() {
+    private ulong bitsLeftInFile() {
         ulong totalBits = size* 8;
-        ulong bitsRead = bytesRead + pageNum*PAGE_SIZE*8;
+        uint bitsRead = bytesRead + pageNum*PAGE_SIZE*8;
         return (size*8) - (8*bytesRead + (8 - bitOffset)); 
     }
     /**

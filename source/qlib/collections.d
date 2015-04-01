@@ -4,6 +4,7 @@ import std.stdio;
 import qlib.qbin;
 import qlib.instruction;
 import qlib.util;
+import std.algorithm;
 import std.container.slist;
 import std.container.array;
 
@@ -137,7 +138,7 @@ struct IdentifierMap {
      *          indices.
      */
     auto byIndex() {
-        return names.keys.sort;
+        return names.keys.sort();
     }
 
     /**

@@ -117,10 +117,6 @@ void writeBuf(T)(T[] buf, ulong count=6) {
     writeln("]");
 }
 
-int max(int a, int b) {
-    if(a > b) return a;
-    return b;
-}
 /**
  * Finds the first instance of the given element in the given range.
  *
