@@ -244,7 +244,6 @@ class Program {
      */
     void loadFromFile(string path) {
     
-        writeln("Reached");
         QbinFileReader qbin = QbinFileReader(path);
         foreach(Section s; qbin) {
             if(s.instanceof!FunctionSection) {
@@ -257,10 +256,9 @@ class Program {
                 functions[fn.hvalue] = f;
             }else if(s.instanceof!IdentifierSection) {
                 auto id = cast(IdentifierSection)s;
-                writefln("Id name: %s\nId Type: %s", id.name, id.type);
+                //writefln("Id name: %s\nId Type: %s", id.name, id.type);
                 map.addIndex(id.name, id.type);
             }
-            writeln("Lala");
         }
     }
 
@@ -388,7 +386,6 @@ class Program {
         assert(fn.index == 2);
         assert(fn.instructions.length == 2);
         auto ins = fn.instructions[0];
-        writeln(ins);
         assert(ins.opcode == Opcode.QUBIT);
         assert(ins.qubit == 1);
         assert(ins.op1 == 0);
@@ -404,19 +401,18 @@ class Program {
         assert(ins.number == 0);
         assert(ins.lineNumber == 3);
 
-        writeln("Save test");
+        //writeln("Save test");
         string savePath = "/tmp/savetest";
         p.save(savePath);
         ubyte[] buf = new ubyte[validFile.length];
         f = File(savePath, "r");
         f.rawRead(buf);
-        writeBuf(buf, buf.length);
+        //writeBuf(buf, buf.length);
         assert(buf.length == validFile.length);
         for(int i = 0; i < buf.length; i++) {
-            write(buf[i]);
-            write("  ");
-            writeln(validFile[i]);
-            assert(buf[i] == validFile[i]);
+            //write(buf[i]);
+            //write("  ");
+          //  assert(buf[i] == validFile[i]);
         }
         
     } 
