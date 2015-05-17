@@ -48,12 +48,12 @@ InstructionArgType[][] argLocations = [
     /*APPLY*/    [IAT.OP1   , IAT.NONE   , IAT.NONE ],
     /*LOAD*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
     /*DUMP*/     [IAT.NONE  , IAT.NONE   , IAT.NONE ],
-    /*SREC*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
-    /*EREC*/     [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
-    /*QSREC*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
-    /*QEREC*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
-    /*PRINT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ],
-    /*FCNOT*/    [IAT.QUBIT , IAT.NONE   , IAT.NONE ]
+    /*SREC*/     [IAT.NUMBER , IAT.NONE   , IAT.NONE ],
+    /*EREC*/     [IAT.NUMBER, IAT.NONE   , IAT.NONE ],
+    /*QSREC*/    [IAT.NUMBER , IAT.NONE   , IAT.NONE ],
+    /*QEREC*/    [IAT.NUMBER , IAT.NONE   , IAT.NONE ],
+    /*PRINT*/    [IAT.NUMBER , IAT.NONE   , IAT.NONE ],
+    /*FCNOT*/    [IAT.NUMBER , IAT.NONE   , IAT.NONE ]
 
 ];
 

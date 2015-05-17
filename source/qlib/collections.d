@@ -168,6 +168,7 @@ struct IdentifierMap {
     IdentifierType typeOf(int index) {
         return types[index];
     }
+
     /**
      * Adds name with the index i 
      * Requires: Neither i nor name exist in indices or names.
@@ -192,8 +193,193 @@ struct IdentifierMap {
         types[i] = type;
         maxIndex = max(i, maxIndex)+1;
     }
-
 }
+
+
+class FunctionPointerNode {
+    FunctionPointerNode[] children;
+    FunctionPointer fp;
+    this(FunctionPointer fp) {
+        this.fp = fp;
+        this.children = [];
+    }
+}
+
+
+class FunctionPointerTree {
+    FunctionPointerNode root;
+    size_t leaves;
+    this(FunctionPointer fp) {
+        root = new FunctionPointerNode(fp);
+    }
+    FunctionPointerNode getLeaf(size_t index, FunctionPointerNode node) {
+        if(node.children) {
+            for(int i = 0; i < node.children.length; i++) {
+                auto res = getLeaf(index, node.children[i]);
+                if(res) return res;
+                else index--;
+            }
+        }else{
+            if(index == 0) {
+                return node;
+            } else {
+                return null;
+            }
+        }
+        assert(0);
+    }
+
+    void createBranch(int index, FunctionPointer[] fps) {
+        auto leaf = getLeaf(index);
+        leaf.children = new FunctionPointerNode[fps.length];
+        for(int i = 0; i < leaf.children.length; i++) {
+            leaf.children[i] = new FunctionPointerNode(fps[i]);
+        }
+    }
+
+    string toString(FunctionPointerNode node, string spaces) {
+        string ret = "";
+        for(int i = 0; i < node.children.length; i++) {
+            ret ~= (spaces ~ node.children[i].fp.toString() ~"\n");
+            ret ~= toString(node.children[i], spaces);
+        }
+        return ret;
+    }
+
+    FunctionPointerNode getLeaf(size_t index) {
+        if(!root.children && index > 0) {
+            throw new Exception("Index out of bounds");
+        }
+        if(!root.children && index == 0) {  
+            return root.fp;
+        }
+        return getLeaf(index, root);
+    }
+}
+
+unittest {
+    writeln("Testing FUNCTIONPOINTERTREE");
+    auto t = new FunctionPointerTree(FunctionPointer(0, 0));
+    writeln(t);
+}
+
+class QProgram {
+
+    FunctionList functions;
+    FunctionPointer[] current;
+    IdentifierMap map;
+    this() {
+    }
+    this(FunctionList fns, IdentifierMap m) {
+        functions = fns;
+        map = m;
+    }
+
+    /**
+     * Descend into the given list of functions. As
+     * long as the operators form a unitary transformation
+     * we can execute as many functions as we want at the
+     * same time.
+     */
+    void switch_to_functions(int[] functions) {
+        current = FunctionPointer[functions.length];
+        for(int i = 0; i < current.length; i++) {
+            current[i] = FunctionPointer(functions[i], 0);
+        }
+    }
+
+    size_t currently_executing() {
+        return current.length;
+    }
+
+    Instruction next(int index) {
+        Instruction ret = functions[current[index].current].instructions[current[index].instruction];
+        if(ret.qubit != 0 || ret.op1 != 0 || ret.op2 != 0 || ret.number != 0) {
+            current[index].instruction = current[index].instruction + 1;
+        }
+        return ret;
+    }
+
+    /**
+     * Converts an instance of instruction to
+     * a valid string.
+     */
+    string instructionToString(Instruction ins) {
+
+        string ins_string = "";
+        auto argTypes = argLocations[ins.opcode];
+        ins_string ~= to_instruction(ins.opcode);
+        ins_string ~= " ";
+        foreach(int i, InstructionArgType at; argTypes) {
+            if (at != InstructionArgType.NONE){
+                ins_string ~= " " ~ map.atIndex(select_field_by_type(ins, at));
+            }
+        }
+        return ins_string;
+    }
+
+    /**
+     * Load a program from a qbin file specified by path.
+     * Params:
+     *      path = Path of the qbin file to load from.
+     */
+    void loadFromFile(string path) {
+    
+        QbinFileReader qbin = QbinFileReader(path);
+        foreach(Section s; qbin) {
+            if(s.instanceof!FunctionSection) {
+                auto fn = cast(FunctionSection)s;
+                Function f = Function(fn.hvalue, Array!Instruction());
+                ubyte[] buf = new ubyte[INSTRUCTION_LENGTH];
+                foreach(Instruction i; fn) {
+                    f.instructions.insert(i);
+                }
+                functions[fn.hvalue] = f;
+            }else if(s.instanceof!IdentifierSection) {
+                auto id = cast(IdentifierSection)s;
+                //writefln("Id name: %s\nId Type: %s", id.name, id.type);
+                map.addIndex(id.name, id.type);
+            }
+        }
+    }
+
+    /**
+     * Stores the program in qbin format at the specified path.
+     * Params:
+     *      path = Path to save program in.
+     */
+    void save(string path) {
+    
+        BitOutputStream bos = BitOutputStream(path);
+        //Write signature
+        bos.writeNumber(0x10545e38, 32);
+        // Write the identifiers
+        foreach(int i; map.byIndex()) {
+            string id = map.atIndex(i);
+            bos.writeNumber(0x1, 2); // Section ID
+            bos.writeNumber(cast(int)map.typeOf(i), 2);
+            bos.writeNumber(cast(int)id.length, 12); // Header Value
+            bos.writeString(id);
+        }
+
+        // Write the functions
+        foreach(Function f; functions.byValue()) {
+            bos.writeNumber(0x0, 2);
+            bos.writeNumber(f.index, 14);
+            foreach(Instruction i; f.instructions) {
+                bos.writeNumber(cast(int)i.opcode, 4);
+                bos.writeNumber(i.qubit, 7);
+                bos.writeNumber(i.op1, 7);
+                bos.writeNumber(i.op2, 7);
+                bos.writeNumber(i.number, 7);
+                bos.writeNumber(i.lineNumber, 16);
+            }
+            bos.writeNumber(0, 32);
+            bos.writeNumber(0, 16);
+        }
+    }
+}
+
 
 /**
  * A wrapper for a qbin file. It is essentially an iterator that
@@ -206,10 +392,10 @@ struct IdentifierMap {
 
 class Program {
 
-    private FunctionList functions;
-    private FunctionPointer fp;
-    private bool term;
-    private IdentifierMap map;
+    FunctionList functions;
+    FunctionPointer fp;
+    bool term;
+    IdentifierMap map;
     this() {
         term = false;
     }
@@ -338,6 +524,7 @@ class Program {
     void terminate() {
          term = true;
     }
+
 
     /**
      * Switches the current function to the one marked
