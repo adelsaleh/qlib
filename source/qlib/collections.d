@@ -1,4 +1,5 @@
 module qlib.collections;
+import std.conv;
 import qlib.asm_tokens;
 import std.stdio;
 import qlib.qbin;
@@ -42,6 +43,7 @@ struct Stack(T) {
 struct FunctionPointer {
     Function current; ///The function we're on right now.
     int instruction; /// The index of the instruction in the current function.
+    CollapsingQueue!size_t queue; /// The queue for this function
 }
 
 /**
@@ -75,9 +77,16 @@ class CollapsingQueue(T) {
         _size = 0;
     }
 
+    this(CollapsingQueue!T q) {
+        foreach(T el; q.queue) {
+            queue.insert(el);
+        }
+        _size = q._size;
+    }
+
     T dequeue() {
         T el = queue.front;
-        queue.removeFront(1);
+        queue.removeFront();
         _size -=1;
         return el;
     }
@@ -105,6 +114,9 @@ class CollapsingQueue(T) {
         return _size;
     }
 
+    void print() {
+        writeln(queue[]);
+    }
     ~this() {
         writeln("CollapsingQueue destructor called");
     }
@@ -196,108 +208,23 @@ struct IdentifierMap {
 }
 
 
-class FunctionPointerNode {
-    FunctionPointerNode[] children;
-    FunctionPointer fp;
-    this(FunctionPointer fp) {
-        this.fp = fp;
-        this.children = [];
-    }
-}
 
 
-class FunctionPointerTree {
-    FunctionPointerNode root;
-    size_t leaves;
-    this(FunctionPointer fp) {
-        root = new FunctionPointerNode(fp);
-    }
-    FunctionPointerNode getLeaf(size_t index, FunctionPointerNode node) {
-        if(node.children) {
-            for(int i = 0; i < node.children.length; i++) {
-                auto res = getLeaf(index, node.children[i]);
-                if(res) return res;
-                else index--;
-            }
-        }else{
-            if(index == 0) {
-                return node;
-            } else {
-                return null;
-            }
-        }
-        assert(0);
-    }
 
-    void createBranch(int index, FunctionPointer[] fps) {
-        auto leaf = getLeaf(index);
-        leaf.children = new FunctionPointerNode[fps.length];
-        for(int i = 0; i < leaf.children.length; i++) {
-            leaf.children[i] = new FunctionPointerNode(fps[i]);
-        }
-    }
-
-    string toString(FunctionPointerNode node, string spaces) {
-        string ret = "";
-        for(int i = 0; i < node.children.length; i++) {
-            ret ~= (spaces ~ node.children[i].fp.toString() ~"\n");
-            ret ~= toString(node.children[i], spaces);
-        }
-        return ret;
-    }
-
-    FunctionPointerNode getLeaf(size_t index) {
-        if(!root.children && index > 0) {
-            throw new Exception("Index out of bounds");
-        }
-        if(!root.children && index == 0) {  
-            return root.fp;
-        }
-        return getLeaf(index, root);
-    }
-}
-
-unittest {
-    writeln("Testing FUNCTIONPOINTERTREE");
-    auto t = new FunctionPointerTree(FunctionPointer(0, 0));
-    writeln(t);
-}
 
 class QProgram {
 
     FunctionList functions;
     FunctionPointer[] current;
     IdentifierMap map;
-    this() {
-    }
+    this() {}
     this(FunctionList fns, IdentifierMap m) {
         functions = fns;
         map = m;
     }
 
-    /**
-     * Descend into the given list of functions. As
-     * long as the operators form a unitary transformation
-     * we can execute as many functions as we want at the
-     * same time.
-     */
-    void switch_to_functions(int[] functions) {
-        current = FunctionPointer[functions.length];
-        for(int i = 0; i < current.length; i++) {
-            current[i] = FunctionPointer(functions[i], 0);
-        }
-    }
-
-    size_t currently_executing() {
-        return current.length;
-    }
-
-    Instruction next(int index) {
-        Instruction ret = functions[current[index].current].instructions[current[index].instruction];
-        if(ret.qubit != 0 || ret.op1 != 0 || ret.op2 != 0 || ret.number != 0) {
-            current[index].instruction = current[index].instruction + 1;
-        }
-        return ret;
+    Function getMain() {
+        return functions[map.indexOf("main")];
     }
 
     /**
