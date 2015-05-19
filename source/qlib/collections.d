@@ -117,9 +117,6 @@ class CollapsingQueue(T) {
     void print() {
         writeln(queue[]);
     }
-    ~this() {
-        writeln("CollapsingQueue destructor called");
-    }
 }
 
 alias FunctionList = Function[int];
